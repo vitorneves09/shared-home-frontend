@@ -8,7 +8,6 @@ import {
   BarChart3, 
   Settings,
   Home,
-  Calendar,
   PieChart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -32,12 +31,6 @@ const navigationItems = [
     href: '/tasks',
     icon: CheckSquare,
     description: 'Organização doméstica'
-  },
-  {
-    title: 'Calendário',
-    href: '/calendar',
-    icon: Calendar,
-    description: 'Agenda mensal'
   },
   {
     title: 'Relatórios',

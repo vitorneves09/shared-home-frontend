@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Filter, Plus, Edit, Trash2, Copy, Calendar, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Search, Filter, Plus, Edit, Trash2, Copy, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { TaskForm } from '@/components/forms/TaskForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -105,65 +105,6 @@ const getPriorityBadge = (priority: string) => {
   }
 };
 
-// Calendar component (simplified)
-const TaskCalendar = ({ tasks }: { tasks: any[] }) => {
-  const today = new Date();
-  const currentMonth = today.getMonth();
-  const currentYear = today.getFullYear();
-  
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
-  
-  const calendarDays = [];
-  
-  // Empty cells for days before the first day of the month
-  for (let i = 0; i < firstDayOfMonth; i++) {
-    calendarDays.push(<div key={`empty-${i}`} className="h-24 p-1"></div>);
-  }
-  
-  // Days of the month
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const dayTasks = tasks.filter(task => task.dueDate === dateStr);
-    
-    calendarDays.push(
-      <div key={day} className="h-24 p-1 border border-border rounded-md bg-card">
-        <div className="font-medium text-sm mb-1">{day}</div>
-        <div className="space-y-1">
-          {dayTasks.slice(0, 2).map(task => (
-            <div 
-              key={task.id} 
-              className={`text-xs p-1 rounded text-white truncate ${
-                task.priority === 'high' ? 'bg-danger' : 
-                task.priority === 'medium' ? 'bg-warning' : 'bg-success'
-              }`}
-            >
-              {task.title}
-            </div>
-          ))}
-          {dayTasks.length > 2 && (
-            <div className="text-xs text-muted-foreground">+{dayTasks.length - 2} mais</div>
-          )}
-        </div>
-      </div>
-    );
-  }
-  
-  return (
-    <div>
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
-          <div key={day} className="p-2 text-center font-medium text-sm bg-muted rounded-md">
-            {day}
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 gap-1">
-        {calendarDays}
-      </div>
-    </div>
-  );
-};
 
 export const Tasks = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -196,10 +137,6 @@ export const Tasks = () => {
           <p className="text-muted-foreground">Organize as atividades domésticas</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
-            <Calendar className="mr-2 h-4 w-4" />
-            Ver Calendário
-          </Button>
           <TaskForm />
         </div>
       </div>
@@ -251,7 +188,6 @@ export const Tasks = () => {
       <Tabs defaultValue="list" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
           <TabsTrigger value="list">Lista de Tarefas</TabsTrigger>
-          <TabsTrigger value="calendar">Calendário</TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="space-y-6">
@@ -401,22 +337,6 @@ export const Tasks = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="calendar" className="space-y-6">
-          <Card className="shadow-custom-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Calendário de Tarefas - Agosto 2024
-              </CardTitle>
-              <CardDescription>
-                Visualize suas tarefas organizadas por data
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TaskCalendar tasks={tasks} />
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );
