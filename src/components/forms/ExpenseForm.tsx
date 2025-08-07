@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Calendar, DollarSign, Tag, User, AlertCircle } from 'lucide-react';
+import { useToast } from '@/hooks/useToast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,6 +33,10 @@ const expenseTypes = [
 ];
 
 export const ExpenseForm = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  
   const [formData, setFormData] = useState({
     name: '',
     amount: '',
@@ -43,9 +48,38 @@ export const ExpenseForm = () => {
     recurring: false
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Expense data:', formData);
+    setIsLoading(true);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast.success('Despesa registrada com sucesso!', {
+        description: `${formData.name} no valor de R$ ${formData.amount} foi registrada.`
+      });
+      
+      // Reset form
+      setFormData({
+        name: '',
+        amount: '',
+        category: '',
+        date: new Date().toISOString().split('T')[0],
+        responsible: '',
+        type: '',
+        description: '',
+        recurring: false
+      });
+      
+      setIsOpen(false);
+    } catch (error) {
+      toast.error('Erro ao registrar despesa', {
+        description: 'Tente novamente em alguns instantes.'
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -53,14 +87,14 @@ export const ExpenseForm = () => {
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-primary text-white shadow-primary">
+        <Button className="bg-gradient-primary text-white shadow-primary hover-lift">
           <DollarSign className="mr-2 h-4 w-4" />
           Nova Despesa
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto animate-scale-in">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-primary" />
@@ -206,10 +240,20 @@ export const ExpenseForm = () => {
 
           {/* Form Actions */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            <Button type="submit" className="bg-gradient-primary text-white shadow-primary flex-1">
-              Salvar Despesa
+            <Button 
+              type="submit" 
+              disabled={isLoading}
+              className="bg-gradient-primary text-white shadow-primary flex-1 hover-lift"
+            >
+              {isLoading ? 'Salvando...' : 'Salvar Despesa'}
             </Button>
-            <Button type="button" variant="outline" className="flex-1">
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="flex-1"
+              onClick={() => setIsOpen(false)}
+              disabled={isLoading}
+            >
               Cancelar
             </Button>
           </div>

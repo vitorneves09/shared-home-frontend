@@ -96,7 +96,7 @@ export const Dashboard = () => {
 
       {/* Financial Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
-        <Card className="bg-gradient-card shadow-custom-md">
+        <Card className="bg-gradient-card shadow-custom-md hover-lift animate-fade-in">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Gasto</CardTitle>
             <Receipt className="h-4 w-4 text-muted-foreground" />
@@ -110,7 +110,7 @@ export const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card shadow-custom-md">
+        <Card className="bg-gradient-card shadow-custom-md hover-lift animate-fade-in" style={{ animationDelay: '0.1s' }}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Orçamento Restante</CardTitle>
             {isOverBudget ? (
@@ -129,7 +129,7 @@ export const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card shadow-custom-md">
+        <Card className="bg-gradient-card shadow-custom-md hover-lift animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">% Orçamento Usado</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -140,7 +140,7 @@ export const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card shadow-custom-md">
+        <Card className="bg-gradient-card shadow-custom-md hover-lift animate-fade-in" style={{ animationDelay: '0.3s' }}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tarefas Pendentes</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
@@ -156,14 +156,14 @@ export const Dashboard = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
         {/* Expenses by Category */}
-        <Card className="shadow-custom-lg">
+        <Card className="shadow-custom-lg animate-slide-up hover-glow">
           <CardHeader>
             <CardTitle className="text-lg sm:text-xl">Gastos por Categoria</CardTitle>
             <CardDescription>Distribuição dos gastos do mês atual</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {expensesByCategory.map((category, index) => (
-              <div key={index} className="space-y-2">
+              <div key={index} className="space-y-2 group hover-lift">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">{category.category}</span>
                   <span className="text-sm text-muted-foreground">
@@ -182,7 +182,7 @@ export const Dashboard = () => {
         </Card>
 
         {/* Upcoming Tasks */}
-        <Card className="shadow-custom-lg">
+        <Card className="shadow-custom-lg animate-slide-up hover-glow" style={{ animationDelay: '0.2s' }}>
           <CardHeader>
             <CardTitle className="text-lg sm:text-xl">Próximas Tarefas</CardTitle>
             <CardDescription>Tarefas com vencimento próximo</CardDescription>
@@ -190,7 +190,7 @@ export const Dashboard = () => {
           <CardContent>
             <div className="space-y-3 sm:space-y-4">
               {upcomingTasks.map((task) => (
-                <div key={task.id} className="flex items-center justify-between p-3 rounded-lg border bg-gradient-card">
+                <div key={task.id} className="flex items-center justify-between p-3 rounded-lg border bg-gradient-subtle hover-lift transition-all duration-normal">
                   <div className="flex items-center space-x-3 min-w-0 flex-1">
                     <Avatar className="h-8 w-8 flex-shrink-0">
                       <AvatarFallback className="bg-primary text-primary-foreground text-xs">
@@ -216,7 +216,7 @@ export const Dashboard = () => {
                 </div>
               ))}
             </div>
-            <Button variant="outline" className="w-full mt-4 text-sm">
+            <Button variant="outline" className="w-full mt-4 text-sm hover-lift">
               Ver Todas as Tarefas
             </Button>
           </CardContent>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Calendar, CheckSquare, User, AlertTriangle, Clock, Repeat } from 'lucide-react';
+import { useToast } from '@/hooks/useToast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,6 +33,10 @@ const priorities = [
 ];
 
 export const TaskForm = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -43,9 +48,38 @@ export const TaskForm = () => {
     recurringFrequency: 'weekly'
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Task data:', formData);
+    setIsLoading(true);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast.success('Tarefa criada com sucesso!', {
+        description: `"${formData.title}" foi adicionada às suas tarefas.`
+      });
+      
+      // Reset form
+      setFormData({
+        title: '',
+        description: '',
+        dueDate: '',
+        assignee: '',
+        priority: 'medium',
+        category: '',
+        recurring: false,
+        recurringFrequency: 'weekly'
+      });
+      
+      setIsOpen(false);
+    } catch (error) {
+      toast.error('Erro ao criar tarefa', {
+        description: 'Tente novamente em alguns instantes.'
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -53,14 +87,14 @@ export const TaskForm = () => {
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" className="hover-lift">
           <CheckSquare className="mr-2 h-4 w-4" />
           Nova Tarefa
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto animate-scale-in">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CheckSquare className="h-5 w-5 text-primary" />
@@ -240,10 +274,20 @@ export const TaskForm = () => {
 
           {/* Form Actions */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            <Button type="submit" className="bg-gradient-primary text-white shadow-primary flex-1">
-              Criar Tarefa
+            <Button 
+              type="submit" 
+              disabled={isLoading}
+              className="bg-gradient-primary text-white shadow-primary flex-1 hover-lift"
+            >
+              {isLoading ? 'Criando...' : 'Criar Tarefa'}
             </Button>
-            <Button type="button" variant="outline" className="flex-1">
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="flex-1"
+              onClick={() => setIsOpen(false)}
+              disabled={isLoading}
+            >
               Cancelar
             </Button>
           </div>
