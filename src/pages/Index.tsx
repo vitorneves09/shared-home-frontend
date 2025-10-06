@@ -45,33 +45,33 @@ const Index = () => {
   return (
     <div className="space-y-16">
       {/* Hero Section */}
-      <section className="text-center space-y-8 py-12">
+      <section className="text-center space-y-8 py-12 animate-fade-in">
         <div className="space-y-4">
-          <Badge className="bg-gradient-primary text-white px-4 py-2">
+          <Badge className="bg-gradient-primary text-white px-4 py-2 animate-scale-in">
             ✨ Organize sua casa com inteligência
           </Badge>
-          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-hero bg-clip-text text-transparent animate-fade-in">
             Gestão Doméstica
             <br />
             Simplificada
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: '0.1s' }}>
             A plataforma completa para organizar despesas, tarefas e a vida doméstica 
             de forma colaborativa e inteligente.
           </p>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <Button 
             size="lg" 
-            className="bg-gradient-primary text-white shadow-primary"
+            className="bg-gradient-primary text-white shadow-primary hover-lift"
             onClick={() => navigate('/dashboard')}
           >
             <Home className="mr-2 h-5 w-5" />
             Começar Agora
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
-          <Button size="lg" variant="outline" onClick={() => navigate('/login')}>
+          <Button size="lg" variant="outline" className="hover-lift" onClick={() => navigate('/login')}>
             Fazer Login
           </Button>
         </div>
@@ -103,9 +103,13 @@ const Index = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (
-            <Card key={index} className="shadow-custom-lg hover:shadow-custom-xl transition-shadow duration-normal">
+            <Card 
+              key={index} 
+              className="shadow-custom-lg hover:shadow-custom-xl hover-lift transition-all duration-normal animate-fade-in"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
               <CardHeader>
-                <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mb-4">
+                <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mb-4 hover-glow">
                   <feature.icon className="h-6 w-6 text-white" />
                 </div>
                 <CardTitle className="text-xl">{feature.title}</CardTitle>

@@ -1,5 +1,8 @@
-import { useState } from 'react';
-import { Search, Filter, Plus, Edit, Trash2, Download, CheckCircle, Clock } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Search, Download, CheckCircle, Clock, FileX } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { ExpenseCard } from '@/components/expenses/ExpenseCard';
+import { EmptyState } from '@/components/ui/empty-state';
 import { ExpenseForm } from '@/components/forms/ExpenseForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,13 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Edit, Trash2, Filter } from 'lucide-react';
 
 // Mock data
 const expenses = [
@@ -102,20 +101,27 @@ export const Expenses = () => {
   const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [selectedStatus, setSelectedStatus] = useState('Todos');
   const [selectedType, setSelectedType] = useState('Todos');
+  const debouncedSearch = useDebounce(searchTerm, 300);
 
-  const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         expense.responsible.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'Todas' || expense.category === selectedCategory;
-    const matchesStatus = selectedStatus === 'Todos' || expense.status === selectedStatus;
-    const matchesType = selectedType === 'Todos' || expense.type === selectedType;
-    
-    return matchesSearch && matchesCategory && matchesStatus && matchesType;
-  });
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter(expense => {
+      const matchesSearch = expense.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+                           expense.responsible.toLowerCase().includes(debouncedSearch.toLowerCase());
+      const matchesCategory = selectedCategory === 'Todas' || expense.category === selectedCategory;
+      const matchesStatus = selectedStatus === 'Todos' || expense.status === selectedStatus;
+      const matchesType = selectedType === 'Todos' || expense.type === selectedType;
+      
+      return matchesSearch && matchesCategory && matchesStatus && matchesType;
+    });
+  }, [debouncedSearch, selectedCategory, selectedStatus, selectedType]);
 
-  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const paidExpenses = filteredExpenses.filter(e => e.status === 'paid').reduce((sum, expense) => sum + expense.amount, 0);
-  const pendingExpenses = filteredExpenses.filter(e => e.status === 'pending').reduce((sum, expense) => sum + expense.amount, 0);
+  const { totalExpenses, paidExpenses, pendingExpenses } = useMemo(() => {
+    return {
+      totalExpenses: filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0),
+      paidExpenses: filteredExpenses.filter(e => e.status === 'paid').reduce((sum, expense) => sum + expense.amount, 0),
+      pendingExpenses: filteredExpenses.filter(e => e.status === 'pending').reduce((sum, expense) => sum + expense.amount, 0)
+    };
+  }, [filteredExpenses]);
 
   return (
     <div className="space-y-6">
@@ -228,82 +234,112 @@ export const Expenses = () => {
         </CardContent>
       </Card>
 
-      {/* Expenses Table */}
-      <Card className="shadow-custom-lg">
-        <CardHeader>
-          <CardTitle>Lista de Despesas</CardTitle>
-          <CardDescription>
-            {filteredExpenses.length} de {expenses.length} despesas
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Despesa</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Responsável</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead className="w-[100px]">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredExpenses.map((expense) => (
-                  <TableRow key={expense.id}>
-                    <TableCell className="font-medium">{expense.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{expense.category}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                            {expense.responsible.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm">{expense.responsible}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{new Date(expense.date).toLocaleDateString('pt-BR')}</TableCell>
-                    <TableCell>{getTypeBadge(expense.type)}</TableCell>
-                    <TableCell>{getStatusBadge(expense.status)}</TableCell>
-                    <TableCell className="text-right font-medium">
-                      R$ {expense.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <Filter className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Marcar como Pago
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-danger">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+      {/* Expenses List */}
+      {filteredExpenses.length === 0 ? (
+        <EmptyState
+          icon={FileX}
+          title="Nenhuma despesa encontrada"
+          description="Não há despesas que correspondam aos filtros selecionados."
+          actionLabel="Limpar Filtros"
+          onAction={() => {
+            setSearchTerm('');
+            setSelectedCategory('Todas');
+            setSelectedStatus('Todos');
+            setSelectedType('Todos');
+          }}
+        />
+      ) : (
+        <>
+          {/* Mobile View - Cards */}
+          <div className="grid grid-cols-1 gap-4 lg:hidden">
+            {filteredExpenses.map((expense) => (
+              <ExpenseCard
+                key={expense.id}
+                expense={expense}
+                getStatusBadge={getStatusBadge}
+                getTypeBadge={getTypeBadge}
+              />
+            ))}
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Desktop View - Table */}
+          <Card className="shadow-custom-lg hidden lg:block">
+            <CardHeader>
+              <CardTitle>Lista de Despesas</CardTitle>
+              <CardDescription>
+                {filteredExpenses.length} de {expenses.length} despesas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Despesa</TableHead>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead>Responsável</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                      <TableHead className="w-[100px]">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredExpenses.map((expense) => (
+                      <TableRow key={expense.id}>
+                        <TableCell className="font-medium">{expense.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{expense.category}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                {expense.responsible.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm">{expense.responsible}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{new Date(expense.date).toLocaleDateString('pt-BR')}</TableCell>
+                        <TableCell>{getTypeBadge(expense.type)}</TableCell>
+                        <TableCell>{getStatusBadge(expense.status)}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          R$ {expense.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <Filter className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                Marcar como Pago
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-danger">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 };

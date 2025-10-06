@@ -1,5 +1,8 @@
-import { useState } from 'react';
-import { Search, Filter, Plus, Edit, Trash2, Copy, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Search, Filter, Edit, Trash2, Copy, CheckCircle, Clock, AlertTriangle, ListX } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { TaskCard } from '@/components/tasks/TaskCard';
+import { EmptyState } from '@/components/ui/empty-state';
 import { TaskForm } from '@/components/forms/TaskForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,14 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 // Mock data
 const tasks = [
@@ -111,22 +109,29 @@ export const Tasks = () => {
   const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [selectedStatus, setSelectedStatus] = useState('Todos');
   const [selectedPriority, setSelectedPriority] = useState('Todas');
+  const debouncedSearch = useDebounce(searchTerm, 300);
 
-  const filteredTasks = tasks.filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         task.assignee.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'Todas' || task.category === selectedCategory;
-    const matchesStatus = selectedStatus === 'Todos' || task.status === selectedStatus;
-    const matchesPriority = selectedPriority === 'Todas' || task.priority === selectedPriority;
-    
-    return matchesSearch && matchesCategory && matchesStatus && matchesPriority;
-  });
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(task => {
+      const matchesSearch = task.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+                           task.description.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+                           task.assignee.toLowerCase().includes(debouncedSearch.toLowerCase());
+      const matchesCategory = selectedCategory === 'Todas' || task.category === selectedCategory;
+      const matchesStatus = selectedStatus === 'Todos' || task.status === selectedStatus;
+      const matchesPriority = selectedPriority === 'Todas' || task.priority === selectedPriority;
+      
+      return matchesSearch && matchesCategory && matchesStatus && matchesPriority;
+    });
+  }, [debouncedSearch, selectedCategory, selectedStatus, selectedPriority]);
 
-  const totalTasks = filteredTasks.length;
-  const completedTasks = filteredTasks.filter(t => t.status === 'completed').length;
-  const pendingTasks = filteredTasks.filter(t => t.status === 'pending').length;
-  const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress').length;
+  const { totalTasks, completedTasks, pendingTasks, inProgressTasks } = useMemo(() => {
+    return {
+      totalTasks: filteredTasks.length,
+      completedTasks: filteredTasks.filter(t => t.status === 'completed').length,
+      pendingTasks: filteredTasks.filter(t => t.status === 'pending').length,
+      inProgressTasks: filteredTasks.filter(t => t.status === 'in_progress').length
+    };
+  }, [filteredTasks]);
 
   return (
     <div className="space-y-6">
@@ -254,87 +259,117 @@ export const Tasks = () => {
             </CardContent>
           </Card>
 
-          {/* Tasks Table */}
-          <Card className="shadow-custom-lg">
-            <CardHeader>
-              <CardTitle>Lista de Tarefas</CardTitle>
-              <CardDescription>
-                {filteredTasks.length} de {tasks.length} tarefas
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Tarefa</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Responsável</TableHead>
-                      <TableHead>Vencimento</TableHead>
-                      <TableHead>Prioridade</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="w-[100px]">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredTasks.map((task) => (
-                      <TableRow key={task.id}>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="font-medium">{task.title}</div>
-                            <div className="text-sm text-muted-foreground">{task.description}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">{task.category}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                                {task.assignee.split(' ').map(n => n[0]).join('')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm">{task.assignee}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{new Date(task.dueDate).toLocaleDateString('pt-BR')}</TableCell>
-                        <TableCell>{getPriorityBadge(task.priority)}</TableCell>
-                        <TableCell>{getStatusBadge(task.status)}</TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <Filter className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Copy className="mr-2 h-4 w-4" />
-                                Duplicar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <CheckCircle className="mr-2 h-4 w-4" />
-                                Marcar Concluída
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-danger">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Excluir
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+          {/* Tasks List */}
+          {filteredTasks.length === 0 ? (
+            <EmptyState
+              icon={ListX}
+              title="Nenhuma tarefa encontrada"
+              description="Não há tarefas que correspondam aos filtros selecionados."
+              actionLabel="Limpar Filtros"
+              onAction={() => {
+                setSearchTerm('');
+                setSelectedCategory('Todas');
+                setSelectedStatus('Todos');
+                setSelectedPriority('Todas');
+              }}
+            />
+          ) : (
+            <>
+              {/* Mobile View - Cards */}
+              <div className="grid grid-cols-1 gap-4 lg:hidden">
+                {filteredTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    getStatusBadge={getStatusBadge}
+                    getPriorityBadge={getPriorityBadge}
+                  />
+                ))}
               </div>
-            </CardContent>
-          </Card>
+
+              {/* Desktop View - Table */}
+              <Card className="shadow-custom-lg hidden lg:block">
+                <CardHeader>
+                  <CardTitle>Lista de Tarefas</CardTitle>
+                  <CardDescription>
+                    {filteredTasks.length} de {tasks.length} tarefas
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Tarefa</TableHead>
+                          <TableHead>Categoria</TableHead>
+                          <TableHead>Responsável</TableHead>
+                          <TableHead>Vencimento</TableHead>
+                          <TableHead>Prioridade</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="w-[100px]">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredTasks.map((task) => (
+                          <TableRow key={task.id}>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <div className="font-medium">{task.title}</div>
+                                <div className="text-sm text-muted-foreground">{task.description}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary">{task.category}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-2">
+                                <Avatar className="h-6 w-6">
+                                  <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                    {task.assignee.split(' ').map(n => n[0]).join('')}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="text-sm">{task.assignee}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>{new Date(task.dueDate).toLocaleDateString('pt-BR')}</TableCell>
+                            <TableCell>{getPriorityBadge(task.priority)}</TableCell>
+                            <TableCell>{getStatusBadge(task.status)}</TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <Filter className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Editar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem>
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    Duplicar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem>
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    Marcar Concluída
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem className="text-danger">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Excluir
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
 
       </Tabs>
